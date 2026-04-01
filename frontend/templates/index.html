@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bro Media – Video Call</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Landing / Join Screen -->
+    <div id="join-screen" class="screen active">
+        <div class="card">
+            <h1>🎥 Bro Media</h1>
+            <p class="subtitle">Peer-to-peer video calling</p>
+            <div class="form-group">
+                <label for="room-input">Room ID</label>
+                <input type="text" id="room-input" placeholder="Enter room name" autocomplete="off">
+            </div>
+            <button id="join-btn" class="btn btn-primary">Join Room</button>
+            <p id="join-error" class="error hidden"></p>
+        </div>
+    </div>
+
+    <!-- Call Screen -->
+    <div id="call-screen" class="screen hidden">
+        <div class="video-grid" id="video-grid">
+            <div class="video-container" id="local-container">
+                <video id="local-video" autoplay muted playsinline></video>
+                <span class="video-label">You</span>
+            </div>
+            <!-- Remote videos are added dynamically -->
+        </div>
+
+        <div class="controls">
+            <button id="toggle-audio" class="btn btn-control" title="Toggle Microphone">
+                🎤
+            </button>
+            <button id="toggle-video" class="btn btn-control" title="Toggle Camera">
+                📹
+            </button>
+            <button id="hang-up" class="btn btn-danger" title="Leave Call">
+                📞
+            </button>
+        </div>
+
+        <div class="status-bar">
+            <span id="room-label"></span>
+            <span id="peer-count">0 peers</span>
+        </div>
+    </div>
+
+    <!-- Config injected from Go template -->
+    <script>
+        window.BRO_CONFIG = {
+            backendURL: "{{.BackendURL}}",
+            wsURL: "{{.WsURL}}"
+        };
+    </script>
+    <script src="/static/js/webrtc.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

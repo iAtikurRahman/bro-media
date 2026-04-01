@@ -1,2 +1,11 @@
-# bro-media
-The platform also supports live streaming, allowing members to broadcast and watch live content in real time. In addition, users can enjoy private and group chats, audio calls, and video calls to stay connected anytime.
+# Bro Media – Frontend
+
+Go web server serving embedded HTML/CSS/JS for the video calling UI.
+
+## Run
+
+```bash
+BACKEND_URL=http://localhost:8080 WS_URL=ws://localhost:8080 go run main.go
+```
+
+Open http://localhost:3000
