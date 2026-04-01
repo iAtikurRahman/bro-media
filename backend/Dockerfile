@@ -12,6 +12,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /backend main.go
 FROM alpine:3.20
 
 RUN apk add --no-cache ca-certificates
+RUN mkdir -p /data
 COPY --from=builder /backend /usr/local/bin/backend
 
 EXPOSE 8080

@@ -27,6 +27,10 @@ services:
       TURN_PASSWORD: "${TURN_PASSWORD:-bromedia-secret}"
       STUN_HOST: "stun:stun.l.google.com:19302"
       ALLOWED_ORIGIN: "*"
+      JWT_SECRET: "${JWT_SECRET:-bro-media-jwt-secret-change-me}"
+      DATA_DIR: "/data"
+    volumes:
+      - backend-data:/data
     depends_on:
       - turn-server
     restart: unless-stopped
@@ -45,3 +49,6 @@ services:
       TURN_PASSWORD: "${TURN_PASSWORD:-bromedia-secret}"
       TURN_REALM: "${TURN_REALM:-bromedia.local}"
     restart: unless-stopped
+
+volumes:
+  backend-data:

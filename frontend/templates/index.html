@@ -3,49 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bro Media – Video Call</title>
+    <title>Bro Media</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <!-- Landing / Join Screen -->
-    <div id="join-screen" class="screen active">
-        <div class="card">
-            <h1>🎥 Bro Media</h1>
-            <p class="subtitle">Peer-to-peer video calling</p>
-            <div class="form-group">
-                <label for="room-input">Room ID</label>
-                <input type="text" id="room-input" placeholder="Enter room name" autocomplete="off">
-            </div>
-            <button id="join-btn" class="btn btn-primary">Join Room</button>
-            <p id="join-error" class="error hidden"></p>
+    <!-- Top Bar -->
+    <header class="topbar">
+        <div class="topbar-left">
+            <h2>🎥 Bro Media</h2>
         </div>
+        <div class="topbar-right">
+            <span id="user-display" class="user-badge"></span>
+            <button id="logout-btn" class="btn btn-sm btn-outline">Logout</button>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="app-layout">
+        <!-- Left Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <!-- Join Room Section -->
+            <div class="sidebar-section">
+                <h3>Join Room</h3>
+                <div class="sidebar-input-group">
+                    <input type="text" id="room-input" placeholder="Room name" autocomplete="off">
+                    <button id="join-room-btn" class="btn btn-primary btn-sm">Join</button>
+                </div>
+            </div>
+
+            <!-- Online Users Section -->
+            <div class="sidebar-section">
+                <h3>Online Users <span id="online-count" class="badge">0</span></h3>
+                <ul id="online-users-list" class="user-list">
+                    <!-- Populated dynamically -->
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Center Content -->
+        <main class="main-content" id="main-content">
+            <!-- Welcome View (no active call) -->
+            <div id="welcome-view" class="center-view active">
+                <div class="welcome-card">
+                    <h1>Welcome to Bro Media</h1>
+                    <p>Join a room or call an online user to get started.</p>
+                    <div class="feature-list">
+                        <div class="feature">📹 Video Calls</div>
+                        <div class="feature">💬 Live Chat</div>
+                        <div class="feature">🖥️ Screen Sharing</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Call View -->
+            <div id="call-view" class="center-view hidden">
+                <div class="call-header">
+                    <span id="call-room-label"></span>
+                    <span id="call-peer-count">0 peers</span>
+                </div>
+                <div class="video-grid" id="video-grid">
+                    <div class="video-container" id="local-container">
+                        <video id="local-video" autoplay muted playsinline></video>
+                        <span class="video-label">You</span>
+                    </div>
+                    <!-- Remote videos added dynamically -->
+                </div>
+
+                <div class="controls">
+                    <button id="toggle-audio" class="btn btn-control" title="Toggle Microphone">🎤</button>
+                    <button id="toggle-video" class="btn btn-control" title="Toggle Camera">📹</button>
+                    <button id="share-screen" class="btn btn-control" title="Share Screen">🖥️</button>
+                    <button id="toggle-chat" class="btn btn-control" title="Toggle Chat">💬</button>
+                    <button id="hang-up" class="btn btn-control btn-hangup" title="Leave Call">📞</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Chat Panel (right side) -->
+        <aside class="chat-panel hidden" id="chat-panel">
+            <div class="chat-header">
+                <h3>Chat</h3>
+                <button id="close-chat" class="btn btn-sm btn-icon">✕</button>
+            </div>
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Type a message…" autocomplete="off">
+                <button id="send-chat" class="btn btn-primary btn-sm">Send</button>
+            </div>
+        </aside>
     </div>
 
-    <!-- Call Screen -->
-    <div id="call-screen" class="screen hidden">
-        <div class="video-grid" id="video-grid">
-            <div class="video-container" id="local-container">
-                <video id="local-video" autoplay muted playsinline></video>
-                <span class="video-label">You</span>
+    <!-- Incoming Call Modal -->
+    <div id="incoming-call-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>📞 Incoming Call</h3>
+            <p id="caller-name"></p>
+            <div class="modal-actions">
+                <button id="accept-call" class="btn btn-primary">Accept</button>
+                <button id="reject-call" class="btn btn-danger-solid">Reject</button>
             </div>
-            <!-- Remote videos are added dynamically -->
-        </div>
-
-        <div class="controls">
-            <button id="toggle-audio" class="btn btn-control" title="Toggle Microphone">
-                🎤
-            </button>
-            <button id="toggle-video" class="btn btn-control" title="Toggle Camera">
-                📹
-            </button>
-            <button id="hang-up" class="btn btn-danger" title="Leave Call">
-                📞
-            </button>
-        </div>
-
-        <div class="status-bar">
-            <span id="room-label"></span>
-            <span id="peer-count">0 peers</span>
         </div>
     </div>
 
@@ -56,7 +112,9 @@
             wsURL: "{{.WsURL}}"
         };
     </script>
+    <script src="/static/js/auth.js"></script>
     <script src="/static/js/webrtc.js"></script>
+    <script src="/static/js/chat.js"></script>
     <script src="/static/js/app.js"></script>
 </body>
 </html>

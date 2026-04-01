@@ -15,27 +15,36 @@ const (
 	maxMessageSize = 64 * 1024 // 64KB
 )
 
-// Client represents a single WebSocket connection.
+// Client represents a single WebSocket connection tied to a user.
 type Client struct {
 	ID     string
 	conn   *websocket.Conn
 	send   chan []byte
 	hub    *Hub
-	roomID string
-	once   sync.Once
+	rooms  map[string]bool
+	mu     sync.Mutex
+	closed bool
 }
 
 func NewClient(id string, conn *websocket.Conn, hub *Hub) *Client {
 	return &Client{
-		ID:   id,
-		conn: conn,
-		send: make(chan []byte, 256),
-		hub:  hub,
+		ID:    id,
+		conn:  conn,
+		send:  make(chan []byte, 256),
+		hub:   hub,
+		rooms: make(map[string]bool),
 	}
 }
 
 // Send queues a message to be written to the WebSocket.
 func (c *Client) Send(msg []byte) {
+	c.mu.Lock()
+	if c.closed {
+		c.mu.Unlock()
+		return
+	}
+	c.mu.Unlock()
+
 	select {
 	case c.send <- msg:
 	default:
@@ -43,23 +52,56 @@ func (c *Client) Send(msg []byte) {
 	}
 }
 
-// SetRoom sets the room this client is joined to.
-func (c *Client) SetRoom(roomID string) {
-	c.roomID = roomID
+// AddRoom tracks a room this client has joined.
+func (c *Client) AddRoom(roomID string) {
+	c.mu.Lock()
+	c.rooms[roomID] = true
+	c.mu.Unlock()
 }
 
-// Close cleans up the client connection.
+// RemoveRoom stops tracking a room.
+func (c *Client) RemoveRoom(roomID string) {
+	c.mu.Lock()
+	delete(c.rooms, roomID)
+	c.mu.Unlock()
+}
+
+// ForceClose shuts down a connection when the same user reconnects.
+func (c *Client) ForceClose() {
+	c.mu.Lock()
+	if c.closed {
+		c.mu.Unlock()
+		return
+	}
+	c.closed = true
+	c.mu.Unlock()
+	close(c.send)
+	c.conn.Close()
+}
+
+// Close cleans up the client, leaving all rooms and unregistering.
 func (c *Client) Close() {
-	c.once.Do(func() {
-		if c.roomID != "" {
-			c.hub.Leave(c.roomID, c.ID)
-		}
-		close(c.send)
-		c.conn.Close()
-	})
+	c.mu.Lock()
+	if c.closed {
+		c.mu.Unlock()
+		return
+	}
+	c.closed = true
+	rooms := make([]string, 0, len(c.rooms))
+	for r := range c.rooms {
+		rooms = append(rooms, r)
+	}
+	c.mu.Unlock()
+
+	for _, roomID := range rooms {
+		c.hub.Leave(roomID, c.ID)
+	}
+	c.hub.Unregister(c)
+	close(c.send)
+	c.conn.Close()
 }
 
-// ReadPump reads messages from the WebSocket and routes them via the hub.
+// ReadPump reads messages from the WebSocket and routes them via the handler.
 func (c *Client) ReadPump(handler func(client *Client, msg []byte)) {
 	defer c.Close()
 
@@ -99,7 +141,6 @@ func (c *Client) WritePump() {
 				return
 			}
 			if err := c.conn.WriteMessage(websocket.TextMessage, msg); err != nil {
-				log.Printf("[client] write error for %s: %v", c.ID, err)
 				return
 			}
 		case <-ticker.C:

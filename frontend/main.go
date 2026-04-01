@@ -24,23 +24,33 @@ func main() {
 		log.Fatalf("[frontend] failed to parse templates: %v", err)
 	}
 
+	templateData := map[string]string{
+		"BackendURL": backendURL,
+		"WsURL":      wsURL,
+	}
+
 	mux := http.NewServeMux()
 
 	// Serve static assets (CSS, JS)
 	mux.Handle("/static/", http.FileServer(http.FS(staticFS)))
 
-	// Main page
+	// Main dashboard page
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
 			return
 		}
-		data := map[string]string{
-			"BackendURL": backendURL,
-			"WsURL":      wsURL,
-		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := tmpl.ExecuteTemplate(w, "index.html", data); err != nil {
+		if err := tmpl.ExecuteTemplate(w, "index.html", templateData); err != nil {
+			log.Printf("[frontend] template error: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+	})
+
+	// Login / signup page
+	mux.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := tmpl.ExecuteTemplate(w, "login.html", templateData); err != nil {
 			log.Printf("[frontend] template error: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}

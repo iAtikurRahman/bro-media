@@ -10,6 +10,8 @@ type Config struct {
 	TURNPassword   string
 	STUNHost       string
 	AllowedOrigins []string
+	JWTSecret      string
+	DataDir        string
 }
 
 func Load() *Config {
@@ -20,6 +22,8 @@ func Load() *Config {
 		TURNUser:     getEnv("TURN_USER", "bromedia"),
 		TURNPassword: getEnv("TURN_PASSWORD", "bromedia-secret"),
 		STUNHost:     getEnv("STUN_HOST", "stun:stun.l.google.com:19302"),
+		JWTSecret:    getEnv("JWT_SECRET", "change-me-in-production"),
+		DataDir:      getEnv("DATA_DIR", "/data"),
 		AllowedOrigins: []string{
 			getEnv("ALLOWED_ORIGIN", "*"),
 		},

@@ -4,19 +4,38 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/iAtikurRahman/bro-media/backend/internal/config"
 	"github.com/iAtikurRahman/bro-media/backend/internal/handler"
 	"github.com/iAtikurRahman/bro-media/backend/internal/signaling"
+	"github.com/iAtikurRahman/bro-media/backend/internal/store"
 )
 
 func main() {
 	cfg := config.Load()
+
+	// Ensure data directory exists
+	if err := os.MkdirAll(cfg.DataDir, 0755); err != nil {
+		log.Fatalf("[main] failed to create data dir: %v", err)
+	}
+
+	// Initialize user store
+	dbPath := filepath.Join(cfg.DataDir, "bro-media.db")
+	s, err := store.New(dbPath)
+	if err != nil {
+		log.Fatalf("[main] failed to open store: %v", err)
+	}
+	defer s.Close()
+
 	hub := signaling.NewHub()
-	h := handler.New(hub, cfg)
+	h := handler.New(hub, cfg, s)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", h.HandleHealth)
+	mux.HandleFunc("/api/signup", h.HandleSignup)
+	mux.HandleFunc("/api/login", h.HandleLogin)
 	mux.HandleFunc("/api/ice-servers", h.HandleICEServers)
 	mux.HandleFunc("/ws", h.HandleWebSocket)
 
@@ -47,7 +66,7 @@ func corsMiddleware(allowedOrigins []string, next http.Handler) http.Handler {
 				w.Header().Set("Access-Control-Allow-Origin", "*")
 			}
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		}
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
